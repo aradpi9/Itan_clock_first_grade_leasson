@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>השעה שלי - לימוד השעון</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&family=Varela+Round&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-sky: #e8f6fc;
+      --bg-sky-dark: #c5e8f7;
+      --cloud-white: #ffffff;
+      --sun-yellow: #ffd93d;
+      --sun-orange: #ffb347;
+      --grass-green: #7ed957;
+      --btn-green: #5cb85c;
+      --btn-green-dark: #4a9f4a;
+      --clock-frame: #8b5a2b;
+      --clock-face: #fffef5;
+      --hour-hand: #e74c3c;
+      --minute-hand: #3498db;
+      --accent-pink: #ff9ff3;
+      --accent-purple: #a29bfe;
+      --star-gold: #ffd700;
+      --text-primary: #2c3e50;
+      --text-secondary: #5d6d7e;
+    }
+
+    * {
+      font-family: 'Varela Round', 'Rubik', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(180deg, var(--bg-sky) 0%, var(--bg-sky-dark) 50%, #d4f0f9 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .title-font {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 900;
+    }
+
+    @keyframes floatCloud {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(20px) translateY(-10px); }
+    }
+
+    @keyframes floatCloudReverse {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(-20px) translateY(-5px); }
+    }
+
+    .cloud { animation: floatCloud 8s ease-in-out infinite; }
+    .cloud-reverse { animation: floatCloudReverse 10s ease-in-out infinite; }
+
+    @keyframes sunPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes sunRays {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    .sun { animation: sunPulse 4s ease-in-out infinite; }
+    .sun-ray { animation: sunRays 2s ease-in-out infinite; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+
+    .btn-interactive {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .btn-interactive:hover {
+      transform: scale(1.05) translateY(-3px);
+    }
+
+    .btn-interactive:active {
+      transform: scale(0.98);
+    }
+
+    .progress-station { transition: all 0.3s ease; }
+
+    .progress-station.completed {
+      background: linear-gradient(135deg, var(--star-gold), #ffed4a);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+
+    .speech-bubble {
+      position: relative;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -15px;
+      right: 30px;
+      border-width: 15px 15px 0;
+      border-style: solid;
+      border-color: white transparent transparent;
+    }
+
+    .clock-hand {
+      cursor: grab;
+      transition: filter 0.2s;
+    }
+
+    .clock-hit-area {
+      stroke: transparent;
+      pointer-events: stroke;
+    }
+
+    .clock-hand:hover { filter: brightness(1.2); }
+    .clock-hand:active { cursor: grabbing; }
+
+    .screen { transition: opacity 0.4s ease, transform 0.4s ease; }
+
+    .screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.95);
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      animation: confettiFall 3s linear forwards;
+    }
+
+    @keyframes medalShine {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.3); }
+    }
+
+    .medal-shine { animation: medalShine 2s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-sky); }
+    ::-webkit-scrollbar-thumb { background: var(--btn-green); border-radius: 4px; }
+
+    button:focus-visible, .focusable:focus-visible {
+      outline: 3px solid var(--sun-yellow);
+      outline-offset: 2px;
+    }
+
+    .day-night-card {
+      border: 2px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 10px 24px rgba(44, 62, 80, 0.15);
+    }
+
+    .day-night-card.morning {
+      background: linear-gradient(180deg, #f8fdff 0%, #e7f6ff 100%);
+    }
+
+    .day-night-card.evening {
+      background: linear-gradient(180deg, #2d4059 0%, #1d2c44 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+
+  <div id="bg-elements" class="fixed inset-0 pointer-events-none overflow-hidden">
+    <div class="sun absolute top-4 left-4 md:top-8 md:left-8">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="30" fill="var(--sun-yellow)"/>
+        <circle cx="50" cy="50" r="25" fill="var(--sun-orange)" opacity="0.5"/>
+        <g class="sun-ray">
+          <line x1="50" y1="10" x2="50" y2="0" stroke="var(--sun-yellow)" stroke-width="4" stroke-linecap="round"/>
+          <line x1="50" y1="90" x2="50" y2="100" stroke="var(--sun-yellow)" stroke-width="4" stroke-linecap="round"/>
+          <line x1="10" y1="50" x2="0" y2="50" stroke="var(--sun-yellow)" stroke-width="4" stroke-linecap="round"/>
+          <line x1="90" y1="50" x2="100" y2="50" stroke="var(--sun-yellow)" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <circle cx="40" cy="45" r="4" fill="var(--text-primary)"/>
+        <circle cx="60" cy="45" r="4" fill="var(--text-primary)"/>
+        <path d="M 35 60 Q 50 75 65 60" stroke="var(--text-primary)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <svg class="cloud absolute top-20 right-10 md:right-20" width="150" height="80" viewBox="0 0 150 80" fill="white" opacity="0.9">
+      <ellipse cx="50" cy="50" rx="40" ry="25"/>
+      <ellipse cx="85" cy="45" rx="35" ry="28"/>
+      <ellipse cx="115" cy="55" rx="30" ry="22"/>
+    </svg>
+    
+    <svg class="cloud-reverse absolute top-40 left-20 md:left-40" width="120" height="60" viewBox="0 0 120 60" fill="white" opacity="0.85">
+      <ellipse cx="40" cy="35" rx="30" ry="20"/>
+      <ellipse cx="70" cy="30" rx="28" ry="22"/>
+      <ellipse cx="95" cy="38" rx="25" ry="18"/>
+    </svg>
+  </div>
+
+  <div class="relative z-10 min-h-screen flex flex-col">
+    
+    <header class="p-4 flex justify-between items-center">
+      <button id="homeBtn" class="btn-interactive bg-white/80 backdrop-blur px-4 py-2 rounded-full shadow-md text-gray-700 hover:bg-white" aria-label="חזרה לדף הבית">
+        <svg class="w-6 h-6 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        בית
+      </button>
+      <button id="parentsBtn" class="btn-interactive bg-white/80 backdrop-blur px-4 py-2 rounded-full shadow-md text-gray-700 hover:bg-white" aria-label="מסך הורים">
+        <svg class="w-6 h-6 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        להורים
+      </button>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center p-4">
+      
+      <!-- HOME SCREEN -->
+      <section id="homeScreen" class="screen w-full max-w-2xl mx-auto text-center">
+        <div class="fade-in-up">
+          <h1 class="title-font text-4xl md:text-6xl text-gray-800 mb-6" style="text-shadow: 2px 2px 4px rgba(255,255,255,0.8);">
+            הַשָּׁעָה שֶׁלִּי
+          </h1>
+          
+          <div class="relative inline-block mb-8">
+            <svg id="homeClock" width="220" height="220" viewBox="0 0 220 220" class="drop-shadow-lg mx-auto">
+              <circle cx="110" cy="110" r="100" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="8"/>
+              <g font-family="Rubik" font-size="18" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="110" y="35">12</text>
+                <text x="158" y="45">1</text>
+                <text x="185" y="75">2</text>
+                <text x="195" y="115">3</text>
+                <text x="185" y="155">4</text>
+                <text x="158" y="185">5</text>
+                <text x="110" y="195">6</text>
+                <text x="62" y="185">7</text>
+                <text x="35" y="155">8</text>
+                <text x="25" y="115">9</text>
+                <text x="35" y="75">10</text>
+                <text x="62" y="45">11</text>
+              </g>
+              <!-- Updated initial position to point at 3 o'clock (Right) -->
+              <!-- cx=110, length=50. 3 o'clock means x2=110+50=160, y2=110 -->
+              <line id="homeHourHand" x1="110" y1="110" x2="160" y2="110" stroke="var(--hour-hand)" stroke-width="6" stroke-linecap="round"/>
+              <line id="homeMinuteHand" x1="110" y1="110" x2="110" y2="40" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="110" cy="110" r="8" fill="var(--text-primary)"/>
+            </svg>
+            
+            <div id="mechogeeHome" class="absolute -left-16 top-1/2 transform -translate-y-1/2">
+              <svg width="80" height="100" viewBox="0 0 80 100">
+                <ellipse cx="40" cy="50" rx="15" ry="45" fill="var(--hour-hand)"/>
+                <circle cx="40" cy="25" r="20" fill="#ffcc99"/>
+                <circle cx="33" cy="22" r="4" fill="var(--text-primary)"/>
+                <circle cx="47" cy="22" r="4" fill="var(--text-primary)"/>
+                <circle cx="34" cy="21" r="1.5" fill="white"/>
+                <circle cx="48" cy="21" r="1.5" fill="white"/>
+                <path d="M 32 32 Q 40 40 48 32" stroke="var(--text-primary)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <circle cx="28" cy="28" r="4" fill="#ffaaaa" opacity="0.6"/>
+                <circle cx="52" cy="28" r="4" fill="#ffaaaa" opacity="0.6"/>
+                <ellipse cx="40" cy="5" rx="12" ry="6" fill="var(--minute-hand)"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="speech-bubble bg-white p-4 md:p-6 rounded-2xl max-w-md mx-auto mb-8 shadow-lg">
+            <p class="text-lg md:text-xl text-gray-700">
+              שָׁלוֹם! אֲנִי <strong style="color: var(--hour-hand);">מְחוֹגִי</strong>!<br>
+              רוֹצֶה לָדַעַת מָה הַשָּׁעָה בְּלִי לִשְׁאוֹל אֶת אִמָּא אוֹ אַבָּא?
+            </p>
+          </div>
+          
+          <button id="startBtn" class="btn-interactive bg-gradient-to-b from-green-400 to-green-600 text-white text-xl md:text-2xl font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-xl" style="background: linear-gradient(to bottom, #7ed957, #5cb85c);">
+            בּוֹאוּ לָלֶמֶד מָה זֶה שָׁעוֹן!
+          </button>
+        </div>
+        
+        <div class="mt-10 fade-in-up" style="animation-delay: 0.3s;">
+          <p class="text-gray-600 mb-3 font-medium">הַתְקַדְּמוּת שֶׁלִּי:</p>
+          <div class="flex justify-center items-center gap-2 md:gap-4 flex-wrap">
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="1">1</div>
+            <div class="w-6 h-1 bg-gray-300 rounded"></div>
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="2">2</div>
+            <div class="w-6 h-1 bg-gray-300 rounded"></div>
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="3">3</div>
+            <div class="w-6 h-1 bg-gray-300 rounded"></div>
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="4">4</div>
+            <div class="w-6 h-1 bg-gray-300 rounded"></div>
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="5">5</div>
+            <div class="w-6 h-1 bg-gray-300 rounded"></div>
+            <div class="progress-station w-12 h-12 md:w-14 md:h-14 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center text-lg" data-stage="6">6</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 1: Introduction -->
+      <section id="stage1" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-4">מַכִּירִים אֶת הַשָּׁעוֹן!</h2>
+          
+          <div class="relative inline-block mb-6">
+            <svg id="stage1Clock" width="280" height="280" viewBox="0 0 280 280" class="drop-shadow-lg mx-auto">
+              <circle cx="140" cy="140" r="130" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="10"/>
+              <g font-family="Rubik" font-size="22" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="140" y="35">12</text>
+                <text x="200" y="55">1</text>
+                <text x="235" y="95">2</text>
+                <text x="250" y="145">3</text>
+                <text x="235" y="195">4</text>
+                <text x="200" y="235">5</text>
+                <text x="140" y="255">6</text>
+                <text x="80" y="235">7</text>
+                <text x="45" y="195">8</text>
+                <text x="30" y="145">9</text>
+                <text x="45" y="95">10</text>
+                <text x="80" y="55">11</text>
+              </g>
+              <g id="hourHandGroup" class="clock-hand" style="cursor: pointer;">
+                <line class="clock-hit-area" x1="128" y1="120" x2="108" y2="84" stroke-width="34" stroke-linecap="round"/>
+                <line x1="140" y1="140" x2="108" y2="84" stroke="var(--hour-hand)" stroke-width="8" stroke-linecap="round" pointer-events="none"/>
+                <circle cx="140" cy="140" r="12" fill="var(--hour-hand)" pointer-events="none"/>
+              </g>
+              <g id="minuteHandGroup" class="clock-hand" style="cursor: pointer;">
+                <line class="clock-hit-area" x1="140" y1="105" x2="140" y2="45" stroke-width="30" stroke-linecap="round"/>
+                <line x1="140" y1="140" x2="140" y2="45" stroke="var(--minute-hand)" stroke-width="5" stroke-linecap="round" pointer-events="none"/>
+                <circle cx="140" cy="140" r="9" fill="var(--minute-hand)" pointer-events="none"/>
+              </g>
+              <circle cx="140" cy="140" r="6" fill="var(--text-primary)"/>
+            </svg>
+            
+            <div id="hourLabel" class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full bg-red-100 text-red-600 px-3 py-1 rounded-lg text-sm font-bold opacity-0 transition-opacity">
+              אֲנִי מַרְאֶה אֶת הַשָּׁעָה
+            </div>
+            <div id="minuteLabel" class="absolute bottom-0 right-0 bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm font-bold opacity-0 transition-opacity">
+              אֲנִי מַרְאֶה אֶת הַדַּקּוֹת
+            </div>
+          </div>
+          
+          <div class="speech-bubble bg-white p-4 rounded-2xl max-w-md mx-auto mb-6 shadow-lg">
+            <p id="stage1Text" class="text-lg text-gray-700">
+              לַשָּׁעוֹן יֵשׁ שְׁנֵי מְחוֹגִים עִיקָּרִיִּים: <strong style="color: var(--hour-hand);">מָחוֹג קָטָן</strong> וְ<strong style="color: var(--minute-hand);">מָחוֹג גָּדוֹל</strong>!<br>
+              <span class="text-base text-gray-500">לְחַץ עַל כָּל מָחוֹג כְּדֵי לָדַעַת עוֹד...</span>
+            </p>
+          </div>
+          
+          <div id="stage1Quiz" class="hidden">
+            <p class="text-xl text-gray-700 mb-4 font-bold">מִי מַרְאֶה אֶת הַשָּׁעָה?</p>
+            <div class="flex justify-center gap-4">
+              <button id="quizSmall" class="btn-interactive bg-red-100 hover:bg-red-200 text-red-700 font-bold px-6 py-3 rounded-xl text-lg border-2 border-red-300">
+                הַמָּחוֹג הַקָּטָן
+              </button>
+              <button id="quizLarge" class="btn-interactive bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold px-6 py-3 rounded-xl text-lg border-2 border-blue-300">
+                הַמָּחוֹג הַגָּדוֹל
+              </button>
+            </div>
+          </div>
+          
+          <button id="stage1Next" class="hidden btn-interactive mt-6 bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg">
+            לַשָּׁלָב הַבָּא!
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 2: Round Hours -->
+      <section id="stage2" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-2">שָׁעוֹת עֲגוּלוֹת</h2>
+          
+          <div class="relative inline-block mb-6">
+            <svg id="stage2Clock" width="260" height="260" viewBox="0 0 260 260" class="drop-shadow-lg mx-auto">
+              <circle cx="130" cy="130" r="120" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="8"/>
+              <g font-family="Rubik" font-size="20" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="130" y="30">12</text>
+                <text x="182" y="42">1</text>
+                <text x="213" y="78">2</text>
+                <text x="225" y="135">3</text>
+                <text x="213" y="192">4</text>
+                <text x="182" y="228">5</text>
+                <text x="130" y="240">6</text>
+                <text x="78" y="228">7</text>
+                <text x="47" y="192">8</text>
+                <text x="35" y="135">9</text>
+                <text x="47" y="78">10</text>
+                <text x="78" y="42">11</text>
+              </g>
+              <line id="stage2HourHand" x1="130" y1="130" x2="130" y2="65" stroke="var(--hour-hand)" stroke-width="7" stroke-linecap="round"/>
+              <line id="stage2MinuteHand" x1="130" y1="130" x2="130" y2="45" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="130" cy="130" r="8" fill="var(--text-primary)"/>
+            </svg>
+          </div>
+          
+          <div class="speech-bubble bg-white p-4 rounded-2xl max-w-md mx-auto mb-4 shadow-lg">
+            <p class="text-lg text-gray-700">
+              כְּשֶׁאֲנִי, הַמָּחוֹג הַגָּדוֹל, מַצְבִּיעַ עַל <strong>12</strong> - זוֹ שָׁעָה עֲגוּלָה!
+            </p>
+          </div>
+          
+          <p id="stage2Question" class="text-xl text-gray-700 mb-4 font-bold">אֵיזוֹ שָׁעָה עַכְשָׁו?</p>
+          <p id="stage2Hint" class="text-base text-gray-600 mb-3 min-h-[28px]"></p>
+          
+          <div id="stage2Answers" class="flex justify-center gap-3 flex-wrap mb-4"></div>
+          <div id="stage2Progress" class="flex justify-center gap-2 mb-4"></div>
+          <div id="stage2Feedback" class="text-lg font-bold min-h-[60px]"></div>
+          
+          <button id="stage2Next" class="hidden btn-interactive bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg">
+            לַשָּׁלָב הַבָּא!
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 3: Morning & Evening (24h) -->
+      <section id="stage3DayNight" class="screen hidden w-full max-w-5xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-4">בֹּקֶר וָעֶרֶב לְפִי הַשָּׁעוֹן</h2>
+
+          <div class="speech-bubble bg-white p-4 rounded-2xl max-w-3xl mx-auto mb-5 shadow-lg">
+            <p class="text-lg text-gray-700">
+              שְׁמוֹנֶה בַּבֹּקֶר נִכְתָּב <strong>08:00</strong>, וּשְׁמוֹנֶה בָּעֶרֶב נִכְתָּב <strong>20:00</strong>.<br>
+              הַשָּׁעָה נִרְאֵית אוֹתוֹ דָּבָר בַּשָּׁעוֹן, אֲבָל הַיּוֹם בְּמָקוֹם אַחֵר!
+            </p>
+          </div>
+
+          <div id="stage3CompareArea" class="grid md:grid-cols-2 gap-4 mb-5" dir="ltr">
+            <div class="day-night-card morning rounded-2xl p-4" dir="rtl">
+
+              <div class="text-4xl mb-1">&#9728;</div>
+              <h3 class="title-font text-2xl text-gray-800 mb-2">בֹּקֶר</h3>
+              <svg id="stage3MorningClock" width="200" height="200" viewBox="0 0 200 200" class="mx-auto drop-shadow">
+                <circle cx="100" cy="100" r="90" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="7"/>
+                <g font-family="Rubik" font-size="16" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                  <text x="100" y="28">12</text>
+                  <text x="138" y="38">1</text>
+                  <text x="160" y="63">2</text>
+                  <text x="168" y="105">3</text>
+                  <text x="160" y="138">4</text>
+                  <text x="138" y="163">5</text>
+                  <text x="100" y="175">6</text>
+                  <text x="62" y="163">7</text>
+                  <text x="40" y="138">8</text>
+                  <text x="32" y="105">9</text>
+                  <text x="40" y="63">10</text>
+                  <text x="62" y="38">11</text>
+                </g>
+                <line id="stage3MorningHourHand" x1="100" y1="100" x2="100" y2="58" stroke="var(--hour-hand)" stroke-width="6" stroke-linecap="round"/>
+                <line id="stage3MorningMinuteHand" x1="100" y1="100" x2="100" y2="36" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="100" cy="100" r="7" fill="var(--text-primary)"/>
+              </svg>
+              <p id="stage3MorningLabel" class="text-lg font-bold text-gray-800 mt-2">08:00 – שְׁמוֹנֶה בַּבֹּקֶר</p>
+              <div class="flex justify-center gap-2 mt-3">
+                <button class="stage3-choice-btn btn-interactive bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-bold px-4 py-2 rounded-xl border border-yellow-300" data-target="morning" data-choice="morning">בֹּקֶר</button>
+                <button class="stage3-choice-btn btn-interactive bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-4 py-2 rounded-xl border border-blue-300" data-target="morning" data-choice="evening">עֶרֶב</button>
+              </div>
+            </div>
+
+            <div class="day-night-card evening rounded-2xl p-4 text-white relative overflow-hidden" dir="rtl">
+
+              <div class="absolute top-3 left-4 text-yellow-200 text-sm">&#10022; &#10022; &#10022;</div>
+              <div class="absolute top-10 right-6 text-yellow-100 text-xs">&#10022; &#10022;</div>
+              <div class="text-4xl mb-1">&#127769;</div>
+              <h3 class="title-font text-2xl mb-2">עֶרֶב</h3>
+              <svg id="stage3EveningClock" width="200" height="200" viewBox="0 0 200 200" class="mx-auto drop-shadow">
+                <circle cx="100" cy="100" r="90" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="7"/>
+                <g font-family="Rubik" font-size="16" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                  <text x="100" y="28">12</text>
+                  <text x="138" y="38">1</text>
+                  <text x="160" y="63">2</text>
+                  <text x="168" y="105">3</text>
+                  <text x="160" y="138">4</text>
+                  <text x="138" y="163">5</text>
+                  <text x="100" y="175">6</text>
+                  <text x="62" y="163">7</text>
+                  <text x="40" y="138">8</text>
+                  <text x="32" y="105">9</text>
+                  <text x="40" y="63">10</text>
+                  <text x="62" y="38">11</text>
+                </g>
+                <line id="stage3EveningHourHand" x1="100" y1="100" x2="100" y2="58" stroke="var(--hour-hand)" stroke-width="6" stroke-linecap="round"/>
+                <line id="stage3EveningMinuteHand" x1="100" y1="100" x2="100" y2="36" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="100" cy="100" r="7" fill="var(--text-primary)"/>
+              </svg>
+              <p id="stage3EveningLabel" class="text-lg font-bold mt-2">20:00 – שְׁמוֹנֶה בָּעֶרֶב</p>
+              <div class="flex justify-center gap-2 mt-3">
+                <button class="stage3-choice-btn btn-interactive bg-yellow-100 hover:bg-yellow-200 text-yellow-900 font-bold px-4 py-2 rounded-xl border border-yellow-300" data-target="evening" data-choice="morning">בֹּקֶר</button>
+                <button class="stage3-choice-btn btn-interactive bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold px-4 py-2 rounded-xl border border-blue-300" data-target="evening" data-choice="evening">עֶרֶב</button>
+              </div>
+            </div>
+          </div>
+
+          <p id="stage3CompareText" class="text-lg text-gray-700 mb-3 font-bold">שְׁנֵיהֶם נִרְאִים אוֹתוֹ דָּבָר בַּשָּׁעוֹן, אֲבָל זֶה בֹּקֶר וְזֶה עֶרֶב.</p>
+          <div id="stage3DayNightFeedback" class="text-lg font-bold min-h-[48px] mb-4"></div>
+
+          <div id="stage3QuizArea" class="hidden bg-white/85 backdrop-blur rounded-2xl p-4 shadow-lg max-w-2xl mx-auto mb-4">
+            <p id="stage3QuizQuestion" class="text-xl text-gray-700 font-bold mb-3"></p>
+            <svg id="stage3QuizClock" width="220" height="220" viewBox="0 0 220 220" class="mx-auto drop-shadow mb-3">
+              <circle cx="110" cy="110" r="100" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="8"/>
+              <g font-family="Rubik" font-size="18" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="110" y="35">12</text>
+                <text x="158" y="45">1</text>
+                <text x="185" y="75">2</text>
+                <text x="195" y="115">3</text>
+                <text x="185" y="155">4</text>
+                <text x="158" y="185">5</text>
+                <text x="110" y="195">6</text>
+                <text x="62" y="185">7</text>
+                <text x="35" y="155">8</text>
+                <text x="25" y="115">9</text>
+                <text x="35" y="75">10</text>
+                <text x="62" y="45">11</text>
+              </g>
+              <line id="stage3QuizHourHand" x1="110" y1="110" x2="110" y2="52" stroke="var(--hour-hand)" stroke-width="6" stroke-linecap="round"/>
+              <line id="stage3QuizMinuteHand" x1="110" y1="110" x2="110" y2="38" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="110" cy="110" r="8" fill="var(--text-primary)"/>
+            </svg>
+            <div id="stage3QuizOptions" class="flex justify-center gap-3 flex-wrap mb-2"></div>
+            <p id="stage3QuizHint" class="text-sm text-gray-600 min-h-[24px]"></p>
+            <div id="stage3DayNightProgress" class="flex justify-center gap-2 mt-3"></div>
+          </div>
+
+          <div id="stage3Done" class="hidden speech-bubble bg-white p-4 rounded-2xl max-w-xl mx-auto mb-4 shadow-lg">
+            <p class="text-lg text-gray-700 font-bold">יָפֶה מְאֹד! עַכְשָׁו אַתָּה יוֹדֵעַ לְהַבְדִּיל בֵּין בֹּקֶר לְעֶרֶב גַּם כְּשֶׁכּוֹתְבִים 08:00 וְ־20:00.</p>
+            <p class="text-base text-gray-600 mt-2">קִבַּלְתָּ מַדְבֶּקֶת שֶׁמֶשׁ־יָרֵחַ! &#9728;&#127769;</p>
+          </div>
+
+          <button id="stage3DayNightNext" class="hidden btn-interactive bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg">
+            לַשָּׁלָב הַבָּא!
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 3: Half and Quarter -->
+      <section id="stage3" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-4">רֶבַע שָׁעָה וַחֲצִי שָׁעָה</h2>
+          
+          <div class="relative inline-block mb-6">
+            <svg id="stage3Clock" width="280" height="280" viewBox="0 0 280 280" class="drop-shadow-lg mx-auto">
+              <circle cx="140" cy="140" r="130" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="10"/>
+              <path id="quarterZone" d="M 140 140 L 140 10 A 130 130 0 0 1 270 140 Z" fill="#ffeb3b" opacity="0.2"/>
+              <path id="halfZone" d="M 140 140 L 140 10 A 130 130 0 0 1 140 270 Z" fill="#81d4fa" opacity="0.2"/>
+              <g font-family="Rubik" font-size="22" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="140" y="35">12</text>
+                <text x="200" y="55">1</text>
+                <text x="235" y="95">2</text>
+                <text x="250" y="145" fill="var(--sun-orange)" font-weight="900">3</text>
+                <text x="235" y="195">4</text>
+                <text x="200" y="235">5</text>
+                <text x="140" y="255" fill="var(--minute-hand)" font-weight="900">6</text>
+                <text x="80" y="235">7</text>
+                <text x="45" y="195">8</text>
+                <text x="30" y="145">9</text>
+                <text x="45" y="95">10</text>
+                <text x="80" y="55">11</text>
+              </g>
+              <line id="stage3HourHand" x1="140" y1="140" x2="140" y2="75" stroke="var(--hour-hand)" stroke-width="7" stroke-linecap="round"/>
+              <g id="stage3MinuteHandGroup" class="clock-hand">
+                <line id="stage3MinuteHand" x1="140" y1="140" x2="140" y2="40" stroke="var(--minute-hand)" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="140" cy="140" r="15" fill="var(--minute-hand)" opacity="0.2"/>
+              </g>
+              <circle cx="140" cy="140" r="8" fill="var(--text-primary)"/>
+            </svg>
+            <p class="text-sm text-gray-500 mt-2">גְּרוֹר אֶת הַמָּחוֹג הַכָּחוֹל!</p>
+          </div>
+          
+          <div class="speech-bubble bg-white p-4 rounded-2xl max-w-md mx-auto mb-4 shadow-lg">
+            <p id="stage3Instruction" class="text-lg text-gray-700">
+              כְּשֶׁהַמָּחוֹג הַגָּדוֹל עַל <strong style="color: var(--sun-orange);">3</strong> - זֶה רֶבַע שָׁעָה!<br>
+              כְּשֶׁהוּא עַל <strong style="color: var(--minute-hand);">6</strong> - זֶה חֲצִי שָׁעָה!
+            </p>
+          </div>
+          
+          <div id="stage3Task" class="bg-white/80 backdrop-blur rounded-2xl p-4 max-w-md mx-auto mb-4 shadow-lg">
+            <p id="stage3TaskText" class="text-xl text-gray-700 font-bold"></p>
+          </div>
+          
+          <button id="stage3Check" class="btn-interactive bg-gradient-to-b from-blue-400 to-blue-600 text-white text-lg font-bold px-6 py-3 rounded-full shadow-lg">
+            בְּדֹק!
+          </button>
+          
+          <div id="stage3Feedback" class="text-lg font-bold mt-4 min-h-[40px]"></div>
+          <div id="stage3Progress" class="flex justify-center gap-2 mt-4"></div>
+          
+          <button id="stage3Next" class="hidden btn-interactive mt-4 bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg">
+            לַשָּׁלָב הַבָּא!
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 4: Practice -->
+      <section id="stage4" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-2">עוֹזְרִים לִמְחוֹגִי</h2>
+          
+          <div id="stage4Scene" class="text-6xl mb-2"></div>
+          
+          <div class="relative inline-block mb-4">
+            <svg id="stage4Clock" width="260" height="260" viewBox="0 0 260 260" class="drop-shadow-lg mx-auto">
+              <circle cx="130" cy="130" r="120" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="8"/>
+              <g font-family="Rubik" font-size="20" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="130" y="25">12</text>
+                <text x="182" y="42">1</text>
+                <text x="213" y="78">2</text>
+                <text x="225" y="135">3</text>
+                <text x="213" y="192">4</text>
+                <text x="182" y="228">5</text>
+                <text x="130" y="240">6</text>
+                <text x="78" y="228">7</text>
+                <text x="47" y="192">8</text>
+                <text x="35" y="135">9</text>
+                <text x="47" y="78">10</text>
+                <text x="78" y="42">11</text>
+              </g>
+              <g id="stage4HourHandGroup" class="clock-hand">
+                <line id="stage4HourHand" x1="130" y1="130" x2="130" y2="65" stroke="var(--hour-hand)" stroke-width="7" stroke-linecap="round"/>
+                <circle cx="130" cy="130" r="12" fill="var(--hour-hand)" opacity="0.3"/>
+              </g>
+              <g id="stage4MinuteHandGroup" class="clock-hand">
+                <line id="stage4MinuteHand" x1="130" y1="130" x2="130" y2="45" stroke="var(--minute-hand)" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="130" cy="130" r="12" fill="var(--minute-hand)" opacity="0.3"/>
+              </g>
+              <circle cx="130" cy="130" r="8" fill="var(--text-primary)"/>
+            </svg>
+            <p class="text-sm text-gray-500 mt-1">גְּרוֹר אֶת הַמְּחוֹגִים!</p>
+          </div>
+          
+          <div class="speech-bubble bg-white p-4 rounded-2xl max-w-md mx-auto mb-4 shadow-lg">
+            <p id="stage4TaskText" class="text-lg text-gray-700"></p>
+          </div>
+          
+          <button id="stage4Check" class="btn-interactive bg-gradient-to-b from-blue-400 to-blue-600 text-white text-lg font-bold px-6 py-3 rounded-full shadow-lg">
+            בְּדֹק!
+          </button>
+          
+          <div id="stage4Feedback" class="text-lg font-bold mt-4 min-h-[40px]"></div>
+          <div id="stage4Progress" class="flex justify-center gap-2 mt-4"></div>
+          
+          <button id="stage4Next" class="hidden btn-interactive mt-4 bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-3 rounded-full shadow-lg">
+            לַשָּׁלָב הַבָּא!
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 5: My Day -->
+      <section id="stage5" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="text-center">
+          <h2 class="title-font text-3xl md:text-4xl text-gray-800 mb-4">הַיּוֹם שֶׁלִּי לְפִי הַשָּׁעָה</h2>
+          
+          <div id="stage5Question" class="bg-white/80 backdrop-blur rounded-2xl p-4 mb-4 shadow-lg">
+            <p id="stage5QuestionText" class="text-xl text-gray-700 font-bold"></p>
+            <div id="stage5SceneIcon" class="text-5xl my-3"></div>
+          </div>
+          
+          <div id="stage5Options" class="flex justify-center gap-3 flex-wrap mb-4"></div>
+          
+          <p class="text-gray-500 mb-2">אוֹ הַזְמַן אֶת הַשָּׁעָה:</p>
+          
+          <div class="inline-block mb-4">
+            <svg id="stage5Clock" width="180" height="180" viewBox="0 0 180 180" class="drop-shadow-lg mx-auto">
+              <circle cx="90" cy="90" r="82" fill="var(--clock-face)" stroke="var(--clock-frame)" stroke-width="6"/>
+              <g font-family="Rubik" font-size="14" font-weight="700" text-anchor="middle" fill="var(--text-primary)">
+                <text x="90" y="22">12</text>
+                <text x="128" y="35">1</text>
+                <text x="150" y="62">2</text>
+                <text x="158" y="95">3</text>
+                <text x="150" y="128">4</text>
+                <text x="128" y="155">5</text>
+                <text x="90" y="168">6</text>
+                <text x="52" y="155">7</text>
+                <text x="30" y="128">8</text>
+                <text x="22" y="95">9</text>
+                <text x="30" y="62">10</text>
+                <text x="52" y="35">11</text>
+              </g>
+              <g id="stage5HourHandGroup" class="clock-hand">
+                <line id="stage5HourHand" x1="90" y1="90" x2="90" y2="50" stroke="var(--hour-hand)" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="90" cy="90" r="8" fill="var(--hour-hand)" opacity="0.3"/>
+              </g>
+              <g id="stage5MinuteHandGroup" class="clock-hand">
+                <line id="stage5MinuteHand" x1="90" y1="90" x2="90" y2="35" stroke="var(--minute-hand)" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="90" cy="90" r="8" fill="var(--minute-hand)" opacity="0.3"/>
+              </g>
+              <circle cx="90" cy="90" r="5" fill="var(--text-primary)"/>
+            </svg>
+          </div>
+          
+          <button id="stage5Confirm" class="btn-interactive bg-gradient-to-b from-purple-400 to-purple-600 text-white text-lg font-bold px-6 py-3 rounded-full shadow-lg mb-4">
+            אַשְׁרֵר!
+          </button>
+          
+          <div id="stage5Progress" class="flex justify-center gap-2 mb-4"></div>
+          
+          <div id="dailySchedule" class="hidden bg-white/90 backdrop-blur rounded-2xl p-4 shadow-lg max-w-lg mx-auto">
+            <h3 class="title-font text-2xl text-gray-800 mb-3">הַיּוֹם שֶׁלִּי!</h3>
+            <div id="scheduleContent" class="grid grid-cols-2 gap-3"></div>
+          </div>
+          
+          <button id="finishBtn" class="hidden btn-interactive mt-4 bg-gradient-to-b from-yellow-400 to-orange-500 text-white text-xl font-bold px-8 py-4 rounded-full shadow-lg">
+            סִיַּמְתִּי אֶת כָּל הַשְּׁלָבִים!
+          </button>
+        </div>
+      </section>
+
+      <!-- PARENTS SCREEN -->
+      <section id="parentsScreen" class="screen hidden w-full max-w-2xl mx-auto">
+        <div class="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg">
+          <h2 class="title-font text-3xl text-gray-800 mb-4 text-center">מַסָּךְ לְהוֹרִים וּלְמוֹרִים</h2>
+          
+          <div class="mb-6 p-4 bg-blue-50 rounded-xl">
+            <p class="text-gray-700 leading-relaxed">
+              הָאַפְּלִיקַצְיָה "הַשָּׁעָה שֶׁלִּי" נוֹעֲדָה לְעַזֹּר לְיַלְדֵּי כִּיתָּה א' לְהָבִין אֶת מוֹשְׂגַּ הַזְּמַן וְלַהֲכִיר אֶת הַשָּׁעוֹן בְּצוּרָה חֲוִיָּתִית וּמְשַׂחֶקֶת.
+            </p>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="font-bold text-lg text-gray-700 mb-2">הִתְקַדְּמוּת הַיֶּלֶד:</h3>
+            <div id="parentsProgress" class="grid grid-cols-2 md:grid-cols-6 gap-2"></div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="font-bold text-lg text-gray-700 mb-3">טִיפִּים לְתַרְגּוּל בַּבַּיִת:</h3>
+            <ul class="space-y-3">
+              <li class="flex items-start gap-3 p-3 bg-green-50 rounded-xl">
+                <span class="text-2xl">1</span>
+                <p class="text-gray-700">שָׁאֲלוּ אֶת הַיֶּלֶד מִדֵּי פַּעַם: "מָה הַשָּׁעָה עַכְשָׁו בַּשָּׁעוֹן?"</p>
+              </li>
+              <li class="flex items-start gap-3 p-3 bg-yellow-50 rounded-xl">
+                <span class="text-2xl">2</span>
+                <p class="text-gray-700">תְּנוּ לַיֶּלֶד לְהַזִּיז אֶת הַמְּחוֹגִים בְּשָׁעוֹן בַּבַּיִת וְלַהֲסַבֵּיר מָה הוּא עוֹשֶׂה.</p>
+              </li>
+              <li class="flex items-start gap-3 p-3 bg-purple-50 rounded-xl">
+                <span class="text-2xl">3</span>
+                <p class="text-gray-700">קִבְעוּ יַחַד "שְׁעַת סִפּוּר", "שְׁעַת מִשְׂחָק" וְ"שְׁעַת שֵׁנָה" וְתִלוּ שָׁעוֹן לְיָד.</p>
+              </li>
+            </ul>
+          </div>
+          
+          <button id="parentsBack" class="btn-interactive w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl">
+            חֲזָרָה לָאַפְּלִיקַצְיָה
+          </button>
+        </div>
+      </section>
+
+      <!-- COMPLETION SCREEN -->
+      <section id="completionScreen" class="screen hidden w-full max-w-2xl mx-auto text-center">
+        <div class="fade-in-up">
+          <div class="text-8xl mb-4">&#127942;</div>
+          <h2 class="title-font text-4xl text-gray-800 mb-4">כָּל הַכָּבוֹד!</h2>
+          <p class="text-xl text-gray-700 mb-6">סִיַּמְתָּ אֶת כָּל הַשְּׁלָבִים!</p>
+          
+          <div class="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg max-w-md mx-auto mb-6">
+            <h3 class="title-font text-2xl text-gray-800 mb-4">הַתְּעוּדוֹת שֶׁלִּי:</h3>
+            <div class="flex flex-wrap justify-center gap-3">
+              <div class="medal-shine bg-gradient-to-b from-yellow-300 to-yellow-500 p-3 rounded-full shadow-lg">
+                <span class="text-3xl">&#127941;</span>
+              </div>
+              <div class="medal-shine bg-gradient-to-b from-blue-300 to-blue-500 p-3 rounded-full shadow-lg">
+                <span class="text-3xl">&#127894;</span>
+              </div>
+              <div class="medal-shine bg-gradient-to-b from-green-300 to-green-500 p-3 rounded-full shadow-lg">
+                <span class="text-3xl">&#127942;</span>
+              </div>
+            </div>
+            <p class="mt-4 text-gray-600">אַתָּה עַכְשָׁו מוּמְחֶה לַשָּׁעוֹן!</p>
+          </div>
+          
+          <button id="restartBtn" class="btn-interactive bg-gradient-to-b from-green-400 to-green-600 text-white text-xl font-bold px-8 py-4 rounded-full shadow-lg">
+            הַתְחָלָה חֲדָשָׁה
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="effectsOverlay" class="fixed inset-0 pointer-events-none z-50"></div>
+
+  <script>
+    // =====================
+    // STATE MANAGEMENT
+    // =====================
+    const state = {
+      currentScreen: 'home',
+      completedStages: new Set(),
+      currentStageProgress: {},
+      stage5Data: {}
+    };
+
+    // Stage data
+    const stage2Questions = [
+      {
+        hour: 3,
+        correct: '3:00',
+        options: ['3:00', '5:00', '8:00'],
+        prompt: 'אֵיזוֹ שָׁעָה עַכְשָׁו?',
+        success: 'כָּל הַכָּבוֹד! הַשָּׁעָה 3:00 בְּדִיּוּק!'
+      },
+      {
+        hour: 7,
+        correct: '7:00',
+        options: ['7:00', '1:00', '12:00'],
+        prompt: 'אֵיזוֹ שָׁעָה עַכְשָׁו?',
+        success: 'מְעוּלֶּה! קָרָאתָ אֶת הַשָּׁעָה נָכוֹן!'
+      },
+      {
+        hour: 10,
+        correct: '10:00',
+        options: ['2:00', '10:00', '4:00'],
+        prompt: 'אֵיזוֹ שָׁעָה עַכְשָׁו?',
+        success: 'נָכוֹן! הַמָּחוֹג הַקָּטָן עַל 10.'
+      },
+      {
+        hour: 12,
+        correct: '12:00',
+        options: ['6:00', '9:00', '12:00'],
+        prompt: 'אֵיזוֹ שָׁעָה עַכְשָׁו?',
+        success: 'יָפֶה! כְּשֶׁהַמָּחוֹג הַקָּטָן עַל 12 זוֹ 12:00.'
+      },
+      {
+        hour: 1,
+        correct: '1:00',
+        options: ['1:00', '11:00', '5:00'],
+        prompt: 'אֵיזוֹ שָׁעָה עַכְשָׁו?',
+        success: 'נָכוֹן! הַשָּׁעָה 1:00.'
+      },
+      {
+        hour: 2,
+        correct: '2',
+        options: ['2', '6', '9'],
+        prompt: 'כָּתוּב כָּאן 14:00. אֵיזֶה מִסְפָּר צָרִיךְ לְהַרְאוֹת הַמָּחוֹג הַקָּטָן?',
+        hint: '14:00 זוֹ 2 בַּצָּהֳרַיִם.',
+        success: 'נָכוֹן! 14:00 זֶה 2 בַּצָּהֳרַיִם, וְהַמָּחוֹג הַקָּטָן עוֹמֵד עַל 2.'
+      },
+      {
+        hour: 7,
+        correct: '19:00',
+        options: ['07:00', '19:00', '23:00'],
+        prompt: 'הַשָּׁעוֹן מַרְאֶה 7:00. בְּאֵיזוֹ שָׁעָה בְּדֶרֶךְ כְּלָל הוֹלְכִים לִישׁוֹן?',
+        hint: '07:00 זוֹ 7 בַּבֹּקֶר, 19:00 זוֹ 7 בָּעֶרֶב.',
+        success: 'מְעוּלֶּה! 19:00 זֶה 7 בָּעֶרֶב.'
+      },
+      {
+        hour: 9,
+        correct: '9',
+        options: ['9', '11', '4'],
+        prompt: 'כָּתוּב כָּאן 21:00. אֵיזֶה מִסְפָּר נִרְאֶה עַל הַשָּׁעוֹן הָאֲנָלוֹגִי?',
+        hint: '21:00 זוֹ 9 בָּעֶרֶב.',
+        success: 'נָכוֹן! 21:00 מִתְאִים לְמָקוֹם 9 בַּשָּׁעוֹן.'
+      },
+      {
+        hour: 10,
+        correct: '22:00',
+        options: ['10:00', '22:00', '12:00'],
+        prompt: 'אִם עַכְשָׁו שָׁעָה 10 בָּעֶרֶב, אֵיךְ כּוֹתְבִים זֹאת בְּפוֹרְמָט 24 שָׁעוֹת?',
+        hint: 'בְּשָׁעוֹת הָעֶרֶב מוֹסִיפִים 12.',
+        success: 'כֵּן! 10 בָּעֶרֶב = 22:00.'
+      }
+    ];
+
+    const stage3DayNightQuiz = [
+      {
+        hour: 8,
+        question: 'אִם עַכְשָׁו אַתָּה מִתְכּוֹנֵן לְבֵית הַסֵּפֶר, אֵיזוֹ שָׁעָה מַתְאִימָה?',
+        options: [
+          { value: '08:00', label: '08:00 – שְׁמוֹנֶה בַּבֹּקֶר' },
+          { value: '20:00', label: '20:00 – שְׁמוֹנֶה בָּעֶרֶב' }
+        ],
+        correct: '08:00',
+        hint: 'בֵּית סֵפֶר הוּא בַּבֹּקֶר.',
+        success: 'נָכוֹן מְאֹד! 08:00 זֶה בַּבֹּקֶר.'
+      },
+      {
+        hour: 9,
+        question: 'אִם עַכְשָׁו חֹשֶׁךְ וְאַתָּה מִתְכּוֹנֵן לִישׁוֹן, מָה תִּבְחַר?',
+        options: [
+          { value: '09:00', label: '09:00 – תֵּשַׁע בַּבֹּקֶר' },
+          { value: '21:00', label: '21:00 – תֵּשַׁע בָּעֶרֶב' }
+        ],
+        correct: '21:00',
+        hint: 'מִסְפָּר גָּבוֹהַּ מֵעַל 12 הוּא לָרֹב בָּעֶרֶב אוֹ בַּלַּיְלָה.',
+        success: 'מְעוּלֶּה! 21:00 זוֹ תֵּשַׁע בָּעֶרֶב.'
+      },
+      {
+        hour: 10,
+        question: 'אַתָּה עוֹמֵד לָלֶכֶת לִישׁוֹן מְאוּחָר. אֵיזוֹ שָׁעָה מַתְאִימָה יוֹתֵר?',
+        options: [
+          { value: '10:00', label: '10:00 – עֶשֶׂר בַּבֹּקֶר' },
+          { value: '22:00', label: '22:00 – עֶשֶׂר בַּלַּיְלָה' }
+        ],
+        correct: '22:00',
+        hint: '22:00 זוֹ 10 בַּלַּיְלָה.',
+        success: 'כָּל הַכָּבוֹד! 10 בַּלַּיְלָה כּוֹתְבִים 22:00.'
+      }
+    ];
+
+    const stage3Tasks = [
+      { type: 'quarter', hour: 3, text: 'גְּרוֹר אֶת הַמָּחוֹג הַגָּדוֹל לְרֶבַע שָׁעָה אַחֲרֵי 3:00' },
+      { type: 'half', hour: 4, text: 'גְּרוֹר אֶת הַמָּחוֹג הַגָּדוֹל לַחֲצִי שָׁעָה אַחֲרֵי 4:00' },
+      { type: 'quarter', hour: 5, text: 'גְּרוֹר אֶת הַמָּחוֹג הַגָּדוֹל לְרֶבַע שָׁעָה אַחֲרֵי 5:00' },
+      { type: 'half', hour: 9, text: 'גְּרוֹר אֶת הַמָּחוֹג הַגָּדוֹל לַחֲצִי שָׁעָה אַחֲרֵי 9:00' }
+    ];
+
+    const stage4Tasks = [
+      {
+        hour: 8,
+        expected24: '20:00',
+        text: 'מְחוֹגִי הוֹלֵךְ לִישׁוֹן בְּ-20:00. שִׂים אֶת הַמְּחוֹגִים עַל 8:00.',
+        scene: '&#127769;',
+        success: 'כָּל הַכָּבוֹד! 20:00 זוֹ 8 בָּעֶרֶב.'
+      },
+      {
+        hour: 1,
+        text: 'מְחוֹגִי אוֹכֵל אֲרוּחַת צָהֳרַיִם בְּשָׁעָה 1:00. שִׂים אֶת הַשָּׁעָה 1:00.',
+        scene: '&#127869;'
+      },
+      {
+        hour: 7,
+        text: 'מְחוֹגִי מִתְעוֹרֵר בְּשָׁעָה 7 בַּבֹּקֶר. שִׂים אֶת הַשָּׁעָה 7:00.',
+        scene: '&#9728;'
+      },
+      {
+        hour: 3,
+        text: 'מְחוֹגִי מְשַׂחֵק בְּשָׁעָה 3:00. שִׂים אֶת הַשָּׁעָה 3:00.',
+        scene: '&#9917;'
+      },
+      {
+        hour: 9,
+        expected24: '21:00',
+        text: 'מְחוֹגִי הוֹלֵךְ לִישׁוֹן בְּ-21:00. שִׂים אֶת הַמְּחוֹגִים בַּמָּקוֹם הַנָּכוֹן.',
+        scene: '&#127769;',
+        success: 'מְעוּלֶּה! 21:00 זוֹ 9 בָּעֶרֶב.'
+      },
+      {
+        hour: 10,
+        expected24: '22:00',
+        text: 'מְחוֹגִי מְסַדֵּר תִּיק לְמָחָר בְּ-22:00. שִׂים אֶת הַמְּחוֹגִים עַל 10:00.',
+        scene: '&#127747;',
+        success: 'נָכוֹן! 22:00 זוֹ 10 בַּלַּיְלָה.'
+      }
+    ];
+
+    const stage5Questions = [
+      { id: 'wake', text: 'בְּאֵיזוֹ שָׁעָה אַתָּה מִתְעוֹרֵר בְּדֶרֶךְ כְּלַל?', icon: '&#9728;', options: ['7:00', '7:30', '8:00'] },
+      { id: 'school', text: 'בְּאֵיזוֹ שָׁעָה אַתָּה הוֹלֵךְ לְבֵית הַסֵּפֶר?', icon: '&#127979;', options: ['7:30', '8:00', '8:30'] },
+      { id: 'lunch', text: 'בְּאֵיזוֹ שָׁעָה אַתֶּם אוֹכְלִים אֲרוּחַת עֶרֶב?', icon: '&#127869;', options: ['5:00', '6:00', '7:00'] },
+      { id: 'sleep', text: 'בְּאֵיזוֹ שָׁעָה אַתָּה הוֹלֵךְ לִישׁוֹן?', icon: '&#127769;', options: ['8:00', '8:30', '9:00'] }
+    ];
+
+    // =====================
+    // DOM ELEMENTS
+    // =====================
+    const screens = {
+      home: document.getElementById('homeScreen'),
+      stage1: document.getElementById('stage1'),
+      stage2: document.getElementById('stage2'),
+      stage3DayNight: document.getElementById('stage3DayNight'),
+      stage3: document.getElementById('stage3'),
+      stage4: document.getElementById('stage4'),
+      stage5: document.getElementById('stage5'),
+      parents: document.getElementById('parentsScreen'),
+      completion: document.getElementById('completionScreen')
+    };
+
+    // =====================
+    // UTILITY FUNCTIONS
+    // =====================
+    function showScreen(screenName) {
+      Object.values(screens).forEach(screen => {
+        screen.classList.add('hidden');
+      });
+      screens[screenName].classList.remove('hidden');
+      state.currentScreen = screenName;
+      window.scrollTo(0, 0);
+    }
+
+    function createConfetti() {
+      const colors = ['#ff6b6b', '#4ecdc4', '#ffd93d', '#95e1d3', '#f38181', '#a29bfe'];
+      const overlay = document.getElementById('effectsOverlay');
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        overlay.appendChild(confetti);
+        
+        setTimeout(() => confetti.remove(), 5000);
+      }
+    }
+
+    function showFeedback(elementId, message, isSuccess) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = message;
+      el.style.color = isSuccess ? '#27ae60' : '#e74c3c';
+      if (isSuccess) {
+        createConfetti();
+      }
+    }
+
+    function updateProgress() {
+      document.querySelectorAll('.progress-station').forEach(station => {
+        const stage = parseInt(station.dataset.stage);
+        if (state.completedStages.has(stage)) {
+          station.classList.add('completed');
+          station.innerHTML = stage === 3 ? '&#9728;&#127769;' : '&#9733;';
+        } else {
+          station.classList.remove('completed');
+          station.textContent = stage;
+        }
+      });
+    }
+
+    // =====================
+    // ANGLE CONVERSION FUNCTIONS (FIXED)
+    // =====================
+    function hourToAngle(hour) {
+      return (hour % 12) * 30 - 90;
+    }
+
+    function minuteToAngle(minute) {
+      return minute * 6 - 90;
+    }
+
+    function angleToMinute(angle) {
+      let normalized = ((angle + 90) % 360 + 360) % 360;
+      return Math.round(normalized / 30);
+    }
+
+    function angleToHour(angle) {
+      let normalized = ((angle + 90) % 360 + 360) % 360;
+      const hour = Math.round(normalized / 30);
+      return hour === 0 ? 12 : hour;
+    }
+
+    function setRoundClock(hour, hourHandId, minuteHandId, cx, cy, hourLength, minuteLength) {
+      const hourAngle = hourToAngle(hour);
+      const hourRad = hourAngle * Math.PI / 180;
+      const minuteRad = minuteToAngle(0) * Math.PI / 180;
+
+      const hourHand = document.getElementById(hourHandId);
+      const minuteHand = document.getElementById(minuteHandId);
+      hourHand.setAttribute('x2', cx + hourLength * Math.cos(hourRad));
+      hourHand.setAttribute('y2', cy + hourLength * Math.sin(hourRad));
+      minuteHand.setAttribute('x2', cx + minuteLength * Math.cos(minuteRad));
+      minuteHand.setAttribute('y2', cy + minuteLength * Math.sin(minuteRad));
+    }
+
+    // =====================
+    // STAGE 1: Introduction
+    // =====================
+    let stage1Clicked = { hour: false, minute: false };
+
+    function initStage1() {
+      stage1Clicked = { hour: false, minute: false };
+      document.getElementById('stage1Quiz').classList.add('hidden');
+      document.getElementById('stage1Next').classList.add('hidden');
+      document.getElementById('stage1Text').innerHTML = 'לַשָּׁעוֹן יֵשׁ שְׁנֵי מְחוֹגִים עִיקָּרִיִּים: <strong style="color: var(--hour-hand);">מָחוֹג קָטָן</strong> וְ<strong style="color: var(--minute-hand);">מָחוֹג גָּדוֹל</strong>!<br><span class="text-base text-gray-500">לְחַץ עַל כָּל מָחוֹג כְּדֵי לָדַעַת עוֹד...</span>';
+      document.getElementById('hourLabel').style.opacity = '0';
+      document.getElementById('minuteLabel').style.opacity = '0';
+    }
+
+    document.getElementById('hourHandGroup').addEventListener('click', () => {
+      stage1Clicked.hour = true;
+      document.getElementById('hourLabel').style.opacity = '1';
+      document.getElementById('stage1Text').innerHTML = 'כָּל הַכָּבוֹד! זֶה הַמָּחוֹג הַקָּטָן - הוּא מַרְאֶה אֶת הַשָּׁעָה!';
+      
+      if (stage1Clicked.hour && stage1Clicked.minute) {
+        setTimeout(() => {
+          document.getElementById('stage1Quiz').classList.remove('hidden');
+        }, 1000);
+      }
+    });
+
+    document.getElementById('minuteHandGroup').addEventListener('click', () => {
+      stage1Clicked.minute = true;
+      document.getElementById('minuteLabel').style.opacity = '1';
+      document.getElementById('stage1Text').innerHTML = 'נֶהֱדָר! זֶה הַמָּחוֹג הַגָּדוֹל - הוּא מַרְאֶה אֶת הַדַּקּוֹת!';
+      
+      if (stage1Clicked.hour && stage1Clicked.minute) {
+        setTimeout(() => {
+          document.getElementById('stage1Quiz').classList.remove('hidden');
+        }, 1000);
+      }
+    });
+
+    document.getElementById('quizSmall').addEventListener('click', () => {
+      showFeedback('stage1Text', 'מְצִיאוֹת! אַתָּה כְּבָר מַתְחִיל לְהָבִין אֶת הַשָּׁעוֹן!', true);
+      document.getElementById('stage1Quiz').classList.add('hidden');
+      document.getElementById('stage1Next').classList.remove('hidden');
+    });
+
+    document.getElementById('quizLarge').addEventListener('click', () => {
+      showFeedback('stage1Text', 'כִּמְעַט... בּוֹא נְנַסֶּה שׁוּב. תַּחְשֹׁב - מִי יוֹתֵר אִיטִי וְקָטָן?', false);
+    });
+
+    document.getElementById('stage1Next').addEventListener('click', () => {
+      state.completedStages.add(1);
+      updateProgress();
+      initStage2();
+      showScreen('stage2');
+    });
+
+    // =====================
+    // STAGE 2: Round Hours
+    // =====================
+    let stage2Current = 0;
+
+    function initStage2() {
+      stage2Current = 0;
+      document.getElementById('stage2Next').classList.add('hidden');
+      document.getElementById('stage2Feedback').innerHTML = '';
+      showStage2Question();
+      updateStage2Progress();
+    }
+
+    function showStage2Question() {
+      const q = stage2Questions[stage2Current];
+      setRoundClock(q.hour, 'stage2HourHand', 'stage2MinuteHand', 130, 130, 65, 85);
+      document.getElementById('stage2Question').textContent = q.prompt || 'אֵיזוֹ שָׁעָה עַכְשָׁו?';
+      document.getElementById('stage2Hint').textContent = q.hint || '';
+      
+      const answersDiv = document.getElementById('stage2Answers');
+      answersDiv.innerHTML = '';
+      
+      const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+      shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-interactive bg-white hover:bg-gray-100 text-gray-700 font-bold px-6 py-3 rounded-xl text-lg border-2 border-gray-300 shadow';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => checkStage2Answer(opt));
+        answersDiv.appendChild(btn);
+      });
+      
+      document.getElementById('stage2Feedback').innerHTML = '';
+    }
+
+    function checkStage2Answer(selected) {
+      const q = stage2Questions[stage2Current];
+
+      if (selected === q.correct) {
+        showFeedback('stage2Feedback', q.success || `כָּל הַכָּבוֹד! הַשָּׁעָה ${q.correct} בְּדִיּוּק!`, true);
+        stage2Current++;
+        updateStage2Progress();
+        
+        if (stage2Current >= stage2Questions.length) {
+          document.getElementById('stage2Next').classList.remove('hidden');
+          document.getElementById('stage2Answers').innerHTML = '';
+          document.getElementById('stage2Hint').textContent = 'כָּל הַכָּבוֹד! עַכְשָׁו נַמְשִׁיךְ לְבֹקֶר וָעֶרֶב בְּפוֹרְמָט 24 שָׁעוֹת.';
+        } else {
+          setTimeout(showStage2Question, 1500);
+        }
+      } else {
+        showFeedback('stage2Feedback', 'לֹא נוֹרָא, תַּסְתַּכֵּל אֵיפֹה הַמָּחוֹג הַקָּטָן עוֹמֵד וּמָה כָּתוּב בַּשְּׁאֵלָה. נַסֶּה שׁוּב.', false);
+      }
+    }
+
+    function updateStage2Progress() {
+      const div = document.getElementById('stage2Progress');
+      div.innerHTML = '';
+      for (let i = 0; i < stage2Questions.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${i < stage2Current ? 'bg-green-500' : 'bg-gray-300'}`;
+        div.appendChild(dot);
+      }
+    }
+
+    document.getElementById('stage2Next').addEventListener('click', () => {
+      state.completedStages.add(2);
+      updateProgress();
+      initStage3DayNight();
+      showScreen('stage3DayNight');
+    });
+
+    // =====================
+    // STAGE 3: Morning & Evening (24h)
+    // =====================
+    let stage3DayNightSelections = { morning: null, evening: null };
+    let stage3DayNightCurrent = 0;
+
+    function initStage3DayNight() {
+      stage3DayNightSelections = { morning: null, evening: null };
+      stage3DayNightCurrent = 0;
+
+      document.getElementById('stage3CompareArea').classList.remove('hidden');
+      document.getElementById('stage3CompareText').classList.remove('hidden');
+      document.getElementById('stage3QuizArea').classList.add('hidden');
+      document.getElementById('stage3Done').classList.add('hidden');
+      document.getElementById('stage3DayNightNext').classList.add('hidden');
+      document.getElementById('stage3DayNightFeedback').innerHTML = '';
+      document.getElementById('stage3QuizHint').textContent = '';
+
+      document.querySelectorAll('.stage3-choice-btn').forEach(btn => {
+        btn.classList.remove('ring-4', 'ring-offset-2', 'ring-green-300', 'ring-blue-300');
+      });
+
+      setRoundClock(8, 'stage3MorningHourHand', 'stage3MorningMinuteHand', 100, 100, 42, 64);
+      setRoundClock(8, 'stage3EveningHourHand', 'stage3EveningMinuteHand', 100, 100, 42, 64);
+      updateStage3DayNightProgress();
+    }
+
+    document.querySelectorAll('.stage3-choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!document.getElementById('stage3QuizArea').classList.contains('hidden')) return;
+
+        const target = btn.dataset.target;
+        const choice = btn.dataset.choice;
+        stage3DayNightSelections[target] = choice;
+
+        document.querySelectorAll(`.stage3-choice-btn[data-target="${target}"]`).forEach(targetBtn => {
+          targetBtn.classList.remove('ring-4', 'ring-offset-2', 'ring-green-300', 'ring-blue-300');
+        });
+
+        btn.classList.add('ring-4', 'ring-offset-2');
+        btn.classList.add(choice === 'morning' ? 'ring-green-300' : 'ring-blue-300');
+
+        if (stage3DayNightSelections.morning && stage3DayNightSelections.evening) {
+          if (stage3DayNightSelections.morning === 'morning' && stage3DayNightSelections.evening === 'evening') {
+            showFeedback('stage3DayNightFeedback', 'נָכוֹן מְאֹד! 08:00 זֶה בַּבֹּקֶר, 20:00 זֶה בָּעֶרֶב.', true);
+            setTimeout(() => {
+              document.getElementById('stage3QuizArea').classList.remove('hidden');
+              showStage3DayNightQuestion();
+            }, 900);
+          } else {
+            showFeedback('stage3DayNightFeedback', 'נַסֶּה שׁוּב. תַּחְשֹׁב מָתַי בְּדֶרֶךְ כְּלָל קָמִים לְבֵית הַסֵּפֶר וּמָתַי הוֹלְכִים לִישׁוֹן.', false);
+          }
+        }
+      });
+    });
+
+    function showStage3DayNightQuestion() {
+      const q = stage3DayNightQuiz[stage3DayNightCurrent];
+      if (!q) return;
+
+      setRoundClock(q.hour, 'stage3QuizHourHand', 'stage3QuizMinuteHand', 110, 110, 58, 72);
+      document.getElementById('stage3QuizQuestion').textContent = q.question;
+      document.getElementById('stage3QuizHint').textContent = q.hint;
+
+      const optionsDiv = document.getElementById('stage3QuizOptions');
+      optionsDiv.innerHTML = '';
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-interactive bg-white hover:bg-gray-100 text-gray-700 font-bold px-4 py-2 rounded-xl border-2 border-gray-300 shadow text-sm';
+        btn.textContent = opt.label;
+        btn.addEventListener('click', () => checkStage3DayNightAnswer(opt.value));
+        optionsDiv.appendChild(btn);
+      });
+
+      updateStage3DayNightProgress();
+    }
+
+    function checkStage3DayNightAnswer(value) {
+      const q = stage3DayNightQuiz[stage3DayNightCurrent];
+      if (value === q.correct) {
+        showFeedback('stage3DayNightFeedback', q.success, true);
+        stage3DayNightCurrent++;
+        updateStage3DayNightProgress();
+
+        if (stage3DayNightCurrent >= stage3DayNightQuiz.length) {
+          document.getElementById('stage3CompareArea').classList.add('hidden');
+          document.getElementById('stage3CompareText').classList.add('hidden');
+          document.getElementById('stage3QuizArea').classList.add('hidden');
+          document.getElementById('stage3Done').classList.remove('hidden');
+          document.getElementById('stage3DayNightNext').classList.remove('hidden');
+        } else {
+          setTimeout(showStage3DayNightQuestion, 1200);
+        }
+      } else {
+        showFeedback('stage3DayNightFeedback', 'כִּמְעַט! תִּסְתַּכֵּל עַל הַסִּפּוּר בַּשְּׁאֵלָה וְתִזְכֹּר: מִסְפָּר גָּבוֹהַּ מֵעַל 12 הוּא בְּדֶרֶךְ כְּלָל עֶרֶב/לַיְלָה.', false);
+      }
+    }
+
+    function updateStage3DayNightProgress() {
+      const div = document.getElementById('stage3DayNightProgress');
+      div.innerHTML = '';
+      for (let i = 0; i < stage3DayNightQuiz.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${i < stage3DayNightCurrent ? 'bg-yellow-400' : 'bg-gray-300'}`;
+        div.appendChild(dot);
+      }
+    }
+
+    document.getElementById('stage3DayNightNext').addEventListener('click', () => {
+      state.completedStages.add(3);
+      updateProgress();
+      initStage3();
+      showScreen('stage3');
+    });
+
+    // =====================
+    // STAGE 3: Half & Quarter
+    // =====================
+    let stage3Current = 0;
+    let stage3MinuteAngle = -90;
+
+    function initStage3() {
+      stage3Current = 0;
+      stage3MinuteAngle = -90;
+      document.getElementById('stage3Next').classList.add('hidden');
+      showStage3Task();
+      updateStage3Progress();
+      setupStage3Drag();
+    }
+
+    function showStage3Task() {
+      const task = stage3Tasks[stage3Current];
+      document.getElementById('stage3TaskText').textContent = task.text;
+      
+      const hourHand = document.getElementById('stage3HourHand');
+      const hourAngle = hourToAngle(task.hour);
+      const cx = 140, cy = 140, length = 65;
+      const rad = hourAngle * Math.PI / 180;
+      hourHand.setAttribute('x2', cx + length * Math.cos(rad));
+      hourHand.setAttribute('y2', cy + length * Math.sin(rad));
+      
+      stage3MinuteAngle = -90;
+      updateStage3MinuteHand();
+      
+      document.getElementById('stage3Feedback').innerHTML = '';
+    }
+
+    function updateStage3MinuteHand() {
+      const hand = document.getElementById('stage3MinuteHand');
+      const cx = 140, cy = 140, length = 100;
+      const rad = stage3MinuteAngle * Math.PI / 180;
+      hand.setAttribute('x2', cx + length * Math.cos(rad));
+      hand.setAttribute('y2', cy + length * Math.sin(rad));
+    }
+
+    function setupStage3Drag() {
+      const svg = document.getElementById('stage3Clock');
+      let isDragging = false;
+
+      svg.addEventListener('mousedown', startDrag);
+      svg.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchend', endDrag);
+
+      function startDrag(e) {
+        if (e.target.closest('#stage3MinuteHandGroup') || e.target.closest('#stage3MinuteHand')) {
+          isDragging = true;
+          e.preventDefault();
+        }
+      }
+
+      function drag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const rect = svg.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left - 140;
+        const y = clientY - rect.top - 140;
+        stage3MinuteAngle = Math.atan2(y, x) * 180 / Math.PI;
+        updateStage3MinuteHand();
+      }
+
+      function endDrag() {
+        isDragging = false;
+      }
+    }
+
+    document.getElementById('stage3Check').addEventListener('click', () => {
+      const task = stage3Tasks[stage3Current];
+      const minute = angleToMinute(stage3MinuteAngle);
+      
+      let isCorrect = false;
+      if (task.type === 'quarter' && minute === 3) isCorrect = true;
+      if (task.type === 'half' && minute === 6) isCorrect = true;
+      
+      if (isCorrect) {
+        const timeText = task.type === 'quarter' ? 'וְרֶבַע' : 'וַחֲצִי';
+        showFeedback('stage3Feedback', `יָפֶה מְאֹד! הַשָּׁעָה עַכְשָׁו ${task.hour}:${task.type === 'quarter' ? '15' : '30'} - ${timeText} אַחֲרֵי ${task.hour}:00!`, true);
+        stage3Current++;
+        updateStage3Progress();
+        
+        if (stage3Current >= stage3Tasks.length) {
+          document.getElementById('stage3Next').classList.remove('hidden');
+        } else {
+          setTimeout(showStage3Task, 2000);
+        }
+      } else {
+        const hint = task.type === 'quarter' ? 'נַסֶּה לְהַגִּיעַ לְ-3' : 'נַסֶּה לְהַגִּיעַ לְ-6';
+        showFeedback('stage3Feedback', `${hint}. זֶה ${task.type === 'quarter' ? 'רֶבַע' : 'חֲצִי'} סִיבּוּב שֶׁל הַשָּׁעוֹן.`, false);
+      }
+    });
+
+    function updateStage3Progress() {
+      const div = document.getElementById('stage3Progress');
+      div.innerHTML = '';
+      for (let i = 0; i < stage3Tasks.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${i < stage3Current ? 'bg-green-500' : 'bg-gray-300'}`;
+        div.appendChild(dot);
+      }
+    }
+
+    document.getElementById('stage3Next').addEventListener('click', () => {
+      state.completedStages.add(4);
+      updateProgress();
+      initStage4();
+      showScreen('stage4');
+    });
+
+    // =====================
+    // STAGE 4: Practice
+    // =====================
+    let stage4Current = 0;
+    let stage4HourAngle = -90;
+    let stage4MinuteAngle = -90;
+    let stage4Dragging = null;
+
+    function initStage4() {
+      stage4Current = 0;
+      document.getElementById('stage4Next').classList.add('hidden');
+      showStage4Task();
+      updateStage4Progress();
+      setupStage4Drag();
+    }
+
+    function showStage4Task() {
+      const task = stage4Tasks[stage4Current];
+      document.getElementById('stage4TaskText').textContent = task.text;
+      document.getElementById('stage4Scene').innerHTML = task.scene;
+      
+      stage4HourAngle = -90;
+      stage4MinuteAngle = -90;
+      updateStage4Hands();
+      
+      document.getElementById('stage4Feedback').innerHTML = '';
+    }
+
+    function updateStage4Hands() {
+      const hourHand = document.getElementById('stage4HourHand');
+      const minuteHand = document.getElementById('stage4MinuteHand');
+      const cx = 130, cy = 130;
+      
+      const hourRad = stage4HourAngle * Math.PI / 180;
+      hourHand.setAttribute('x2', cx + 65 * Math.cos(hourRad));
+      hourHand.setAttribute('y2', cy + 65 * Math.sin(hourRad));
+      
+      const minuteRad = stage4MinuteAngle * Math.PI / 180;
+      minuteHand.setAttribute('x2', cx + 85 * Math.cos(minuteRad));
+      minuteHand.setAttribute('y2', cy + 85 * Math.sin(minuteRad));
+    }
+
+    function setupStage4Drag() {
+      const svg = document.getElementById('stage4Clock');
+
+      svg.addEventListener('mousedown', startDrag);
+      svg.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchend', endDrag);
+
+      function startDrag(e) {
+        const target = e.target;
+        if (target.closest('#stage4HourHandGroup') || target.closest('#stage4HourHand')) {
+          stage4Dragging = 'hour';
+          e.preventDefault();
+        } else if (target.closest('#stage4MinuteHandGroup') || target.closest('#stage4MinuteHand')) {
+          stage4Dragging = 'minute';
+          e.preventDefault();
+        }
+      }
+
+      function drag(e) {
+        if (!stage4Dragging) return;
+        e.preventDefault();
+        
+        const rect = svg.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left - 130;
+        const y = clientY - rect.top - 130;
+        const angle = Math.atan2(y, x) * 180 / Math.PI;
+        
+        if (stage4Dragging === 'hour') {
+          stage4HourAngle = angle;
+        } else {
+          stage4MinuteAngle = angle;
+        }
+        updateStage4Hands();
+      }
+
+      function endDrag() {
+        stage4Dragging = null;
+      }
+    }
+
+    document.getElementById('stage4Check').addEventListener('click', () => {
+      const task = stage4Tasks[stage4Current];
+      const hour = angleToHour(stage4HourAngle);
+      const expectedHour = task.hour;
+      
+      const minuteCorrect = Math.abs(stage4MinuteAngle - (-90)) < 20 || Math.abs(stage4MinuteAngle - 270) < 20;
+      
+      if (hour === expectedHour && minuteCorrect) {
+        showFeedback('stage4Feedback', task.success || 'מְצִיאוֹת! עָשִׂיתָ עֲבוֹדָה מְצֻיֶּנֶת!', true);
+        stage4Current++;
+        updateStage4Progress();
+        
+        if (stage4Current >= stage4Tasks.length) {
+          document.getElementById('stage4Next').classList.remove('hidden');
+        } else {
+          setTimeout(showStage4Task, 2000);
+        }
+      } else {
+        const extraText = task.expected24 ? ` (${task.expected24})` : '';
+        showFeedback('stage4Feedback', `בְּדֹק שׁוּב - הַמָּחוֹג הַקָּטָן צָרִיךְ לַעֲמֹד עַל ${expectedHour}${extraText}, וְהַגָּדוֹל עַל 12.`, false);
+      }
+    });
+
+    function updateStage4Progress() {
+      const div = document.getElementById('stage4Progress');
+      div.innerHTML = '';
+      for (let i = 0; i < stage4Tasks.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${i < stage4Current ? 'bg-green-500' : 'bg-gray-300'}`;
+        div.appendChild(dot);
+      }
+    }
+
+    document.getElementById('stage4Next').addEventListener('click', () => {
+      state.completedStages.add(5);
+      updateProgress();
+      initStage5();
+      showScreen('stage5');
+    });
+
+    // =====================
+    // STAGE 5: My Day
+    // =====================
+    let stage5Current = 0;
+    let stage5HourAngle = -90;
+    let stage5MinuteAngle = -90;
+    let stage5Dragging = null;
+
+    function initStage5() {
+      stage5Current = 0;
+      state.stage5Data = {};
+      document.getElementById('finishBtn').classList.add('hidden');
+      document.getElementById('dailySchedule').classList.add('hidden');
+      document.getElementById('stage5Question').classList.remove('hidden');
+      document.getElementById('stage5Options').classList.remove('hidden');
+      document.getElementById('stage5Clock').parentElement.classList.remove('hidden');
+      document.getElementById('stage5Confirm').classList.remove('hidden');
+      document.getElementById('stage5Progress').classList.remove('hidden');
+      showStage5Question();
+      updateStage5Progress();
+      setupStage5Drag();
+    }
+
+    function showStage5Question() {
+      const q = stage5Questions[stage5Current];
+      document.getElementById('stage5QuestionText').textContent = q.text;
+      document.getElementById('stage5SceneIcon').innerHTML = q.icon;
+      
+      stage5HourAngle = -90;
+      stage5MinuteAngle = -90;
+      updateStage5Hands();
+      
+      const optionsDiv = document.getElementById('stage5Options');
+      optionsDiv.innerHTML = '';
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-interactive bg-white hover:bg-gray-100 text-gray-700 font-bold px-4 py-2 rounded-xl border-2 border-gray-300 shadow text-sm';
+        btn.textContent = opt;
+        btn.addEventListener('click', () => selectStage5Option(opt, q.id));
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function selectStage5Option(time, id) {
+      const [hour, minute] = time.split(':').map(Number);
+      stage5HourAngle = hourToAngle(hour);
+      stage5MinuteAngle = minuteToAngle(minute || 0);
+      updateStage5Hands();
+    }
+
+    function updateStage5Hands() {
+      const hourHand = document.getElementById('stage5HourHand');
+      const minuteHand = document.getElementById('stage5MinuteHand');
+      const cx = 90, cy = 90;
+      
+      const hourRad = stage5HourAngle * Math.PI / 180;
+      hourHand.setAttribute('x2', cx + 40 * Math.cos(hourRad));
+      hourHand.setAttribute('y2', cy + 40 * Math.sin(hourRad));
+      
+      const minuteRad = stage5MinuteAngle * Math.PI / 180;
+      minuteHand.setAttribute('x2', cx + 55 * Math.cos(minuteRad));
+      minuteHand.setAttribute('y2', cy + 55 * Math.sin(minuteRad));
+    }
+
+    function setupStage5Drag() {
+      const svg = document.getElementById('stage5Clock');
+
+      svg.addEventListener('mousedown', startDrag);
+      svg.addEventListener('touchstart', startDrag, { passive: false });
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('touchmove', drag, { passive: false });
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchend', endDrag);
+
+      function startDrag(e) {
+        const target = e.target;
+        if (target.closest('#stage5HourHandGroup') || target.closest('#stage5HourHand')) {
+          stage5Dragging = 'hour';
+          e.preventDefault();
+        } else if (target.closest('#stage5MinuteHandGroup') || target.closest('#stage5MinuteHand')) {
+          stage5Dragging = 'minute';
+          e.preventDefault();
+        }
+      }
+
+      function drag(e) {
+        if (!stage5Dragging) return;
+        e.preventDefault();
+        
+        const rect = svg.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left - 90;
+        const y = clientY - rect.top - 90;
+        const angle = Math.atan2(y, x) * 180 / Math.PI;
+        
+        if (stage5Dragging === 'hour') {
+          stage5HourAngle = angle;
+        } else {
+          stage5MinuteAngle = angle;
+        }
+        updateStage5Hands();
+      }
+
+      function endDrag() {
+        stage5Dragging = null;
+      }
+    }
+
+    document.getElementById('stage5Confirm').addEventListener('click', () => {
+      const q = stage5Questions[stage5Current];
+      const hour = angleToHour(stage5HourAngle);
+      const minutePos = angleToMinute(stage5MinuteAngle);
+      
+      let minuteStr = '00';
+      if (minutePos === 3) minuteStr = '15';
+      else if (minutePos === 6) minuteStr = '30';
+      else if (minutePos === 9) minuteStr = '45';
+      else if (minutePos === 0 || minutePos === 12) minuteStr = '00';
+      
+      const timeStr = `${hour}:${minuteStr}`;
+      
+      state.stage5Data[q.id] = { time: timeStr, icon: q.icon };
+      stage5Current++;
+      updateStage5Progress();
+      
+      if (stage5Current >= stage5Questions.length) {
+        showDailySchedule();
+      } else {
+        showStage5Question();
+      }
+    });
+
+    function updateStage5Progress() {
+      const div = document.getElementById('stage5Progress');
+      div.innerHTML = '';
+      for (let i = 0; i < stage5Questions.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${i < stage5Current ? 'bg-purple-500' : 'bg-gray-300'}`;
+        div.appendChild(dot);
+      }
+    }
+
+    function showDailySchedule() {
+      document.getElementById('stage5Question').classList.add('hidden');
+      document.getElementById('stage5Options').classList.add('hidden');
+      document.getElementById('stage5Clock').parentElement.classList.add('hidden');
+      document.getElementById('stage5Confirm').classList.add('hidden');
+      document.getElementById('stage5Progress').classList.add('hidden');
+      
+      const scheduleDiv = document.getElementById('scheduleContent');
+      scheduleDiv.innerHTML = '';
+      
+      const labels = {
+        wake: 'הִתְעוֹרְרוּת',
+        school: 'בֵּית סֵפֶר',
+        lunch: 'אֲרוּחַת עֶרֶב',
+        sleep: 'שֵׁנָה'
+      };
+      
+      Object.entries(state.stage5Data).forEach(([key, data]) => {
+        const item = document.createElement('div');
+        item.className = 'bg-gradient-to-b from-blue-50 to-blue-100 rounded-xl p-3 text-center fade-in-up';
+        item.innerHTML = `
+          <div class="text-3xl mb-1">${data.icon}</div>
+          <div class="font-bold text-gray-700">${labels[key]}</div>
+          <div class="text-xl text-blue-600">${data.time}</div>
+        `;
+        scheduleDiv.appendChild(item);
+      });
+      
+      document.getElementById('dailySchedule').classList.remove('hidden');
+      document.getElementById('finishBtn').classList.remove('hidden');
+      createConfetti();
+    }
+
+    document.getElementById('finishBtn').addEventListener('click', () => {
+      state.completedStages.add(6);
+      updateProgress();
+      showScreen('completion');
+      createConfetti();
+    });
+
+    // =====================
+    // NAVIGATION
+    // =====================
+    document.getElementById('homeBtn').addEventListener('click', () => {
+      showScreen('home');
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      initStage1();
+      showScreen('stage1');
+    });
+
+    document.getElementById('parentsBtn').addEventListener('click', () => {
+      showParentsProgress();
+      showScreen('parents');
+    });
+
+    document.getElementById('parentsBack').addEventListener('click', () => {
+      showScreen('home');
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      state.completedStages.clear();
+      state.stage5Data = {};
+      updateProgress();
+      showScreen('home');
+    });
+
+    function showParentsProgress() {
+      const div = document.getElementById('parentsProgress');
+      div.innerHTML = '';
+      
+      const stageNames = [
+        'הַכָּרוּת עִם הַשָּׁעוֹן',
+        'שָׁעוֹת עֲגוּלוֹת',
+        'בֹּקֶר/עֶרֶב (24 שָׁעוֹת)',
+        'רֶבַע וַחֲצִי',
+        'תַּרְגּוּל מַעֲשִׂי',
+        'הַיּוֹם שֶׁלִּי'
+      ];
+      
+      for (let i = 1; i <= 6; i++) {
+        const completed = state.completedStages.has(i);
+        const item = document.createElement('div');
+        item.className = `p-2 rounded-lg text-center text-sm ${completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`;
+
+        item.innerHTML = `
+          <div class="text-2xl mb-1">${completed ? '&#10004;' : '&#9711;'}</div>
+          <div>${stageNames[i-1]}</div>
+        `;
+        div.appendChild(item);
+      }
+    }
+
+    // =====================
+    // INITIALIZATION
+    // =====================
+    updateProgress();
+    
+    // Animate home clock
+    // Start at tick=2 so first hour displayed is 3 (tick + 1)
+    let homeClockTick = 2;
+    
+    function animateHomeClock() {
+      const hourAngle = hourToAngle(homeClockTick + 1);
+      const hourHand = document.getElementById('homeHourHand');
+      const cx = 110, cy = 110, length = 50;
+      const rad = hourAngle * Math.PI / 180;
+      hourHand.setAttribute('x2', cx + length * Math.cos(rad));
+      hourHand.setAttribute('y2', cy + length * Math.sin(rad));
+      
+      homeClockTick = (homeClockTick + 1) % 12;
+    }
+    
+    // Run once immediately to set correct position, then interval
+    animateHomeClock();
+    setInterval(animateHomeClock, 3000);
+  </script>
+</body>
+</html>
